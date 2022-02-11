@@ -19,7 +19,7 @@
 int main(int argc, char **argv)
 {
   ros::init(argc, argv, "fsm_bump_go");
-
+  
   fsm_bump_go::BumpGo fsm_bump_go;
 
   ros::Rate loop_rate(20);

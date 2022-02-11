@@ -13,10 +13,8 @@
 // limitations under the License.
 
 #include "fsm_bump_go/BumpGo.h"
-
 #include "kobuki_msgs/BumperEvent.h"
 #include "geometry_msgs/Twist.h"
-
 #include "ros/ros.h"
 
 namespace fsm_bump_go
@@ -26,15 +24,30 @@ BumpGo::BumpGo()
 : state_(GOING_FORWARD),
   pressed_(false)
 {
-  // sub_bumber_ = n_.subscribe(...);
-  // pub_vel_ = n_.advertise<...>(...)
+
+  // el nombre del topic para recibir los mensajes del bumper es --> /mobile_base/events/bumper
+  // subscribe('nombreTopic',frecuencia,funcion de CallBack);
+   
+  //ros::Subscriber vsub_bumber_ = sus.subscribe("/mobile_base/events/bumper",10,&BumpGo::bumperCallback,this);
+
+  // el nombre del topic para publibar en los motores es --> mobile_base/commands/velocity
+  // n_.advertise< Paquete :: Tipo del mensaje >('Nombre del topic',frecuencia);
+
+  //ros::Publisher pub_vel_ = pub.advertise<geometry_msgs::Twist>("mobile_base/commands/velocity",10);
+
+  sub_bumber_ = n_.subscribe("/mobile_base/events/bumper",10,&BumpGo::bumperCallback,this);
+  pub_vel_ = n_.advertise<geometry_msgs::Twist>("mobile_base/commands/velocity",10);
 }
 
 void
 BumpGo::bumperCallback(const kobuki_msgs::BumperEvent::ConstPtr& msg)
 {
-  // pressed_ = (...);
-  //  ...
+  int a = msg->PRESSED ;
+   
+  pressed_ = msg->state == kobuki_msgs::BumperEvent::PRESSED;
+  
+ 
+  ROS_INFO("OUCH");
 }
 
 void
@@ -42,13 +55,18 @@ BumpGo::step()
 {
   geometry_msgs::Twist cmd;
 
+  float linearV = 0.2 ;
+  float angularW = 0.4 ;
+
   switch (state_)
   {
     case GOING_FORWARD:
-      // cmd.linear.x = ...;
-      // cmd.angular.z = ...;
 
-      if (pressed_)ç
+      cmd.linear.x = linearV ;
+      cmd.angular.z = 0 ;
+      
+
+      if (pressed_)
       {
         press_ts_ = ros::Time::now();
         state_ = GOING_BACK;
@@ -57,8 +75,9 @@ BumpGo::step()
 
       break;
     case GOING_BACK:
-      // cmd.linear.x = ...;
-      // cmd.angular.z = ...;
+
+        cmd.linear.x = -linearV  ;
+        cmd.angular.z = 0 ;
 
       if ((ros::Time::now() - press_ts_).toSec() > BACKING_TIME )
       {
@@ -69,8 +88,9 @@ BumpGo::step()
 
       break;
     case TURNING:
-      // cmd.linear.x = ...;
-      // cmd.angular.z = ...;
+
+        cmd.linear.x = 0 ;
+        cmd.angular.z = angularW ;
 
       if ((ros::Time::now()-turn_ts_).toSec() > TURNING_TIME )
       {
@@ -80,7 +100,7 @@ BumpGo::step()
       break;
     }
 
-    // pub_vel_.publish(...);
+    pub_vel_.publish(cmd);
 }
 
 }  // namespace fsm_bump_go
