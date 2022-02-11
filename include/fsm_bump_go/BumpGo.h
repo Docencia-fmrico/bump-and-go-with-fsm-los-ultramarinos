@@ -16,7 +16,6 @@
 #define FSM_BUMP_GO_BUMPGO_H
 
 #include "ros/ros.h"
-
 #include "kobuki_msgs/BumperEvent.h"
 #include "geometry_msgs/Twist.h"
 
@@ -28,7 +27,14 @@ class BumpGo
 public:
   BumpGo();
 
-  void bumperCallback(const kobuki_msgs::BumperEvent::ConstPtr& msg);
+
+  //ros::Subscriber subscribirSensor(ros::NodeHandle nodo); //Esta funcion debe suscribir al topic del sensor y definir una funcion sensorCallback(msg)
+  //void sensorCallback(msg) --> debe actualizar el valor de obstacle_ a OBSTACLE_DETECTED_RIGHT u OBSTACLE_DETECTED_LEFT. 
+  //El tipo del mensaje depende del sensor.
+  
+
+
+  //void sensorCallback(const kobuki_msgs::BumperEvent::ConstPtr&  msg);
   void step();
 
 private:
@@ -36,20 +42,24 @@ private:
 
   static const int GOING_FORWARD   = 0;
   static const int GOING_BACK = 1;
-  static const int TURNING = 2;
+  static const int TURNING_LEFT = 2;
+  static const int TURNING_RIGHT = 3;
+  static const int NO_OBSTACLE_DETECTED = GOING_FORWARD;
+  static const int OBSTACLE_DETECTED_RIGHT = TURNING_LEFT;
+  static const int OBSTACLE_DETECTED_LEFT = TURNING_RIGHT;
 
   static constexpr double TURNING_TIME = 5.0;
   static constexpr double BACKING_TIME = 3.0;
 
   int state_;
-
-  bool pressed_;
+  int obstacle_;
 
   ros::Time press_ts_;
   ros::Time turn_ts_;
 
-  ros::Subscriber sub_bumber_;
+  ros::Subscriber sub_sensor_;
   ros::Publisher pub_vel_;
+
 };
 
 }  // namespace fsm_bump_go
