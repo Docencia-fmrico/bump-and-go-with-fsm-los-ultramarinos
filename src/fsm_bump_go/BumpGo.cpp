@@ -22,7 +22,8 @@ namespace fsm_bump_go
 
 BumpGo::BumpGo()
 : state_(GOING_FORWARD),
-  pressed_(false)
+  pressed_(false),
+  sentido_(1)
 {
 
   // el nombre del topic para recibir los mensajes del bumper es --> /mobile_base/events/bumper
@@ -45,9 +46,25 @@ BumpGo::bumperCallback(const kobuki_msgs::BumperEvent::ConstPtr& msg)
   int a = msg->PRESSED ;
    
   pressed_ = msg->state == kobuki_msgs::BumperEvent::PRESSED;
-  
- 
-  ROS_INFO("OUCH");
+
+  if (pressed_)
+  {
+    switch (msg->bumper)
+    {
+      case kobuki_msgs::BumperEvent::LEFT:
+        sentido_=TURNING_RIGHT;
+        ROS_INFO("OUCH  POR LA IZQ");
+        break;
+      case kobuki_msgs::BumperEvent::RIGHT:
+        sentido_=TURNING_LEFT;
+        ROS_INFO("OUCH POR LA DRCH");
+        break;
+      case kobuki_msgs::BumperEvent::CENTER:
+        sentido_=TURNING_LEFT;
+        ROS_INFO("OUCH DE FRENTE");
+        break;
+    }
+  }
 }
 
 void
@@ -90,7 +107,7 @@ BumpGo::step()
     case TURNING:
 
         cmd.linear.x = 0 ;
-        cmd.angular.z = angularW ;
+        cmd.angular.z = sentido_*angularW ;
 
       if ((ros::Time::now()-turn_ts_).toSec() > TURNING_TIME )
       {
