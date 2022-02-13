@@ -29,6 +29,8 @@ public:
   BumpGo();
 
   void bumperCallback(const kobuki_msgs::BumperEvent::ConstPtr& msg);
+  bool detectObstacle(int state);
+  void detectDirection(int bumper);
   void step();
 
 private:

@@ -43,28 +43,41 @@ BumpGo::BumpGo()
 void
 BumpGo::bumperCallback(const kobuki_msgs::BumperEvent::ConstPtr& msg)
 {
-  int a = msg->PRESSED ;
+  int state_ = msg->state;
+  int bumper_ = msg->bumper;
    
-  pressed_ = msg->state == kobuki_msgs::BumperEvent::PRESSED;
+  pressed_ = BumpGo::detectObstacle(state_);
 
   if (pressed_)
   {
-    switch (msg->bumper)
+    BumpGo::detectDirection(bumper_);
+  }
+}
+
+bool
+BumpGo::detectObstacle(int state)
+ {
+   return (state == kobuki_msgs::BumperEvent::PRESSED);
+ }
+
+void
+BumpGo::detectDirection(int bumper)
+{
+  switch (bumper)
     {
       case kobuki_msgs::BumperEvent::LEFT:
         sentido_=TURNING_RIGHT;
-        ROS_INFO("OUCH  POR LA IZQ");
+        ROS_INFO("OBSTACLE DETECTED LEFT");
         break;
       case kobuki_msgs::BumperEvent::RIGHT:
         sentido_=TURNING_LEFT;
-        ROS_INFO("OUCH POR LA DRCH");
+        ROS_INFO("OBSTACLE DETECTED RIGHT");
         break;
       case kobuki_msgs::BumperEvent::CENTER:
         sentido_=TURNING_LEFT;
-        ROS_INFO("OUCH DE FRENTE");
+        ROS_INFO("OBSTACLE DETECTED FRONT");
         break;
     }
-  }
 }
 
 void
@@ -100,7 +113,14 @@ BumpGo::step()
       {
         turn_ts_ = ros::Time::now();
         state_ = TURNING;
-        ROS_INFO("GOING_BACK -> TURNING");
+        if (sentido_ == TURNING_LEFT)
+        {
+          ROS_INFO("GOING_BACK -> TURNING LEFT");
+        }
+        if (sentido_ == TURNING_RIGHT)
+        {
+          ROS_INFO("GOING_BACK -> TURNING RIGHT");
+        }
       }
 
       break;
