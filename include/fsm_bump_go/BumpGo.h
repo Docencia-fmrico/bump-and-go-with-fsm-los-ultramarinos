@@ -41,7 +41,12 @@ private:
   static constexpr double TURNING_TIME = 5.0;
   static constexpr double BACKING_TIME = 3.0;
 
+  static const int TURNING_RIGHT = -1;
+  static const int TURNING_LEFT = 1;
+  
   int state_;
+
+  int sentido_;
 
   bool pressed_;
 
