@@ -15,6 +15,7 @@
 #include "fsm_bump_go/BumpGo.h"
 #include "kobuki_msgs/BumperEvent.h"
 #include "geometry_msgs/Twist.h"
+#include "sensor_msgs/LaserScan.h"
 #include "ros/ros.h"
 
 namespace fsm_bump_go
@@ -28,7 +29,7 @@ BumpGo::BumpGo()
 
   // el nombre del topic para recibir los mensajes del bumper es --> /mobile_base/events/bumper
   // subscribe('nombreTopic',frecuencia,funcion de CallBack);
-   
+
   //ros::Subscriber vsub_bumber_ = sus.subscribe("/mobile_base/events/bumper",10,&BumpGo::bumperCallback,this);
 
   // el nombre del topic para publibar en los motores es --> mobile_base/commands/velocity
@@ -36,15 +37,40 @@ BumpGo::BumpGo()
 
   //ros::Publisher pub_vel_ = pub.advertise<geometry_msgs::Twist>("mobile_base/commands/velocity",10);
 
+  // Suscriptor del bumper
   sub_bumber_ = n_.subscribe("/mobile_base/events/bumper",10,&BumpGo::bumperCallback,this);
+
+  // Publicador del laser
+  pub_astra_ = n_.subscribe("/kobuki/Laser/scan",10,&BumpGo::laserCallback,this);
   pub_vel_ = n_.advertise<geometry_msgs::Twist>("mobile_base/commands/velocity",10);
 }
 
 void
+BumpGo::laserCallback(const sensor_msgs::LaserScan::ConstPtr& msg)
+{
+  /* Version 1: leemos las medidas y vamos hacia atras si detectamos un obstáculo
+    a una distancia d m
+  */
+  int d = 5;
+  int ranges_size = msg->ranges.size();
+  double distancia_media = 0.0;
+
+
+  for (int i = 0; i < ranges_size; i++) {
+    distancia_media+=msg->ranges[i];
+  }
+
+  ROS_INFO("Distancia media: %lf", distancia_media);
+
+}
+
+
+// Bumper
+void
 BumpGo::bumperCallback(const kobuki_msgs::BumperEvent::ConstPtr& msg)
 {
   int a = msg->PRESSED ;
-   
+
   pressed_ = msg->state == kobuki_msgs::BumperEvent::PRESSED;
 
   if (pressed_)
@@ -66,6 +92,7 @@ BumpGo::bumperCallback(const kobuki_msgs::BumperEvent::ConstPtr& msg)
     }
   }
 }
+//
 
 void
 BumpGo::step()
@@ -81,7 +108,7 @@ BumpGo::step()
 
       cmd.linear.x = linearV ;
       cmd.angular.z = 0 ;
-      
+
 
       if (pressed_)
       {

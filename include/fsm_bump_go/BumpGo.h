@@ -19,6 +19,7 @@
 
 #include "kobuki_msgs/BumperEvent.h"
 #include "geometry_msgs/Twist.h"
+#include "sensor_msgs/LaserScan.h"
 
 namespace fsm_bump_go
 {
@@ -29,6 +30,8 @@ public:
   BumpGo();
 
   void bumperCallback(const kobuki_msgs::BumperEvent::ConstPtr& msg);
+  void laserCallback(const sensor_msgs::LaserScan::ConstPtr& msg);
+
   void step();
 
 private:
@@ -43,7 +46,7 @@ private:
 
   static const int TURNING_RIGHT = -1;
   static const int TURNING_LEFT = 1;
-  
+
   int state_;
 
   int sentido_;
@@ -52,8 +55,10 @@ private:
 
   ros::Time press_ts_;
   ros::Time turn_ts_;
+  ros::Time scan_ts_;
 
   ros::Subscriber sub_bumber_;
+  ros::Subscriber pub_astra_;
   ros::Publisher pub_vel_;
 };
 
