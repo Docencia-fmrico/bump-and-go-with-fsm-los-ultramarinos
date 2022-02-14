@@ -51,17 +51,24 @@ BumpGo::laserCallback(const sensor_msgs::LaserScan::ConstPtr& msg)
   /* Version 1: leemos las medidas y vamos hacia atras si detectamos un obstáculo
     a una distancia d m
   */
-  int d = 5;
+  double d = 5.0;
   int ranges_size = msg->ranges.size();
   double distancia_media = 0.0;
 
 
-  for (int i = 0; i < ranges_size; i++) {
+  for (int i = 0; i < ranges_size; i++)
+  {
     distancia_media+=msg->ranges[i];
   }
 
   ROS_INFO("Distancia media: %lf", distancia_media);
 
+  // Si detecta un obstáculo, continúa hacia atrás
+  if (distancia_media < d)
+  {
+    sentido_ = GOING_BACK;
+    ROS_INFO("OUCH DE FRENTE");
+  }
 }
 
 
