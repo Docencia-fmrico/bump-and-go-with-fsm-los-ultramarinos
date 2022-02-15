@@ -38,10 +38,10 @@ BumpGo::BumpGo()
   //ros::Publisher pub_vel_ = pub.advertise<geometry_msgs::Twist>("mobile_base/commands/velocity",10);
 
   // Suscriptor del bumper
-  sub_bumber_ = n_.subscribe("/mobile_base/events/bumper",10,&BumpGo::bumperCallback,this);
+  //sub_bumber_ = n_.subscribe("/mobile_base/events/bumper",10,&BumpGo::bumperCallback,this);
 
-  // Publicador del laser
-  pub_astra_ = n_.subscribe("/kobuki/Laser/scan",10,&BumpGo::laserCallback,this);
+  // Suscriptor del laser
+  pub_astra_ = n_.subscribe("/scan",10,&BumpGo::laserCallback,this);
   pub_vel_ = n_.advertise<geometry_msgs::Twist>("mobile_base/commands/velocity",10);
 }
 
@@ -51,26 +51,44 @@ BumpGo::laserCallback(const sensor_msgs::LaserScan::ConstPtr& msg)
   /* Version 1: leemos las medidas y vamos hacia atras si detectamos un obstáculo
     a una distancia d m
   */
+  int i = 0;
+
   double d = 1.0;
   int ranges_size = msg->ranges.size();
-  double distancia_media = 0.0;
+
+  double distacnia_media_izq = 0.0;
+  double distacnia_media_der = 0.0;
 
 
-  for (int i = 0; i < ranges_size; i++)
+  for (i = 0; i < ranges_size/2; i++)
   {
-    distancia_media+=msg->ranges[i]
+    if (msg->ranges[i] > 0 && msg->ranges[i] < 1)
+        distacnia_media_izq+=msg->ranges[i];
+
+  }
+  for (i = ranges_size/2; i < ranges_size; i++)
+  {
+    if (msg->ranges[i] > 0 && msg->ranges[i] < 1)
+        distacnia_media_der+=msg->ranges[i];
   }
 
-  distancia_media = distancia_media/ranges_size;
+  distacnia_media_der = distacnia_media_der / (ranges_size/2);
+  distacnia_media_izq = distacnia_media_izq / (ranges_size/2);
 
-  ROS_INFO("Distancia media: %lf", distancia_media);
+  ROS_INFO("Distancia media: %lf %lf", distacnia_media_izq, distacnia_media_der);
 
-  // Si detecta un obstáculo, continúa hacia atrás
-  if (distancia_media < d)
-  {
-    sentido_ = GOING_BACK;
-    ROS_INFO("OUCH DE FRENTE");
+  if (distacnia_media_izq < 0.2) {
+    pressed_ = true;
+    sentido_ = 1;
   }
+  else if (distacnia_media_der < 0.2) {
+    pressed_ = true;
+    sentido_ = -1;
+  }
+  else {
+    pressed_ = false;
+  }
+
 }
 
 
