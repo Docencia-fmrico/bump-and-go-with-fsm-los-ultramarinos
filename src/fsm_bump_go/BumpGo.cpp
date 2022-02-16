@@ -15,6 +15,7 @@
 #include "fsm_bump_go/BumpGo.h"
 #include "kobuki_msgs/BumperEvent.h"
 #include "geometry_msgs/Twist.h"
+#include "sensor_msgs/LaserScan.h"
 #include "ros/ros.h"
 
 namespace fsm_bump_go
@@ -28,7 +29,7 @@ BumpGo::BumpGo()
 
   // el nombre del topic para recibir los mensajes del bumper es --> /mobile_base/events/bumper
   // subscribe('nombreTopic',frecuencia,funcion de CallBack);
-   
+
   //ros::Subscriber vsub_bumber_ = sus.subscribe("/mobile_base/events/bumper",10,&BumpGo::bumperCallback,this);
 
   // el nombre del topic para publibar en los motores es --> mobile_base/commands/velocity
@@ -36,15 +37,67 @@ BumpGo::BumpGo()
 
   //ros::Publisher pub_vel_ = pub.advertise<geometry_msgs::Twist>("mobile_base/commands/velocity",10);
 
-  sub_bumber_ = n_.subscribe("/mobile_base/events/bumper",10,&BumpGo::bumperCallback,this);
+  // Suscriptor del bumper
+  //sub_bumber_ = n_.subscribe("/mobile_base/events/bumper",10,&BumpGo::bumperCallback,this);
+
+  // Suscriptor del laser
+  pub_astra_ = n_.subscribe("/scan",10,&BumpGo::laserCallback,this);
   pub_vel_ = n_.advertise<geometry_msgs::Twist>("mobile_base/commands/velocity",10);
 }
 
 void
+BumpGo::laserCallback(const sensor_msgs::LaserScan::ConstPtr& msg)
+{
+  /* Version 1: leemos las medidas y vamos hacia atras si detectamos un obstáculo
+    a una distancia d m
+  */
+  int i = 0;
+
+  double d = 1.0;
+  int ranges_size = msg->ranges.size();
+
+  double distacnia_media_izq = 0.0;
+  double distacnia_media_der = 0.0;
+
+
+  for (i = 0; i < ranges_size/2; i++)
+  {
+    if (msg->ranges[i] > 0 && msg->ranges[i] < 1)
+        distacnia_media_izq+=msg->ranges[i];
+
+  }
+  for (i = ranges_size/2; i < ranges_size; i++)
+  {
+    if (msg->ranges[i] > 0 && msg->ranges[i] < 1)
+        distacnia_media_der+=msg->ranges[i];
+  }
+
+  distacnia_media_der = distacnia_media_der / (ranges_size/2);
+  distacnia_media_izq = distacnia_media_izq / (ranges_size/2);
+
+  ROS_INFO("Distancia media: %lf %lf", distacnia_media_izq, distacnia_media_der);
+
+  if (distacnia_media_izq < 0.2) {
+    pressed_ = true;
+    sentido_ = 1;
+  }
+  else if (distacnia_media_der < 0.2) {
+    pressed_ = true;
+    sentido_ = -1;
+  }
+  else {
+    pressed_ = false;
+  }
+
+}
+
+
+// Bumper
+void
 BumpGo::bumperCallback(const kobuki_msgs::BumperEvent::ConstPtr& msg)
 {
   int a = msg->PRESSED ;
-   
+
   pressed_ = msg->state == kobuki_msgs::BumperEvent::PRESSED;
 
   if (pressed_)
@@ -66,6 +119,7 @@ BumpGo::bumperCallback(const kobuki_msgs::BumperEvent::ConstPtr& msg)
     }
   }
 }
+//
 
 void
 BumpGo::step()
@@ -81,7 +135,7 @@ BumpGo::step()
 
       cmd.linear.x = linearV ;
       cmd.angular.z = 0 ;
-      
+
 
       if (pressed_)
       {
