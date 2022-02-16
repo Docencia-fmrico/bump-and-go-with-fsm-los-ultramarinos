@@ -37,11 +37,16 @@ public:
 private:
   ros::NodeHandle n_;
 
+
+  double linearV = 0.2 ;
+  double angularW = 0.5 ;
+
+
   static const int GOING_FORWARD   = 0;
   static const int GOING_BACK = 1;
   static const int TURNING = 2;
 
-  static constexpr double TURNING_TIME = 5.0;
+  static constexpr double TURNING_TIME = 0.2;
   static constexpr double BACKING_TIME = 3.0;
 
   static const int TURNING_RIGHT = -1;

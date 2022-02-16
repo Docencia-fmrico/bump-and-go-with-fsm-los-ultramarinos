@@ -56,36 +56,54 @@ BumpGo::laserCallback(const sensor_msgs::LaserScan::ConstPtr& msg)
   double d = 1.0;
   int ranges_size = msg->ranges.size();
 
-  double distacnia_media_izq = 0.0;
-  double distacnia_media_der = 0.0;
+  double distacnia_media_izq = 0.1;
+  double distacnia_media_der = 0.1;
+  double distancia_media_cen = msg->ranges[ranges_size/2];
 
+  // Para que no explote
+  if (angularW > 3.0)
+    angularW = 3.0;
 
   for (i = 0; i < ranges_size/2; i++)
   {
-    if (msg->ranges[i] > 0 && msg->ranges[i] < 1)
+    if (msg->ranges[i] > 0.1 && msg->ranges[i] < 10.0)
         distacnia_media_izq+=msg->ranges[i];
 
   }
   for (i = ranges_size/2; i < ranges_size; i++)
   {
-    if (msg->ranges[i] > 0 && msg->ranges[i] < 1)
+    if (msg->ranges[i] > 0.01 && msg->ranges[i] < 10.0)
         distacnia_media_der+=msg->ranges[i];
   }
 
-  distacnia_media_der = distacnia_media_der / (ranges_size/2);
-  distacnia_media_izq = distacnia_media_izq / (ranges_size/2);
 
-  ROS_INFO("Distancia media: %lf %lf", distacnia_media_izq, distacnia_media_der);
 
-  if (distacnia_media_izq < 0.2) {
+  distacnia_media_izq = distacnia_media_izq*270/365 / (ranges_size/2);
+  distacnia_media_der = distacnia_media_der*270/365 / (ranges_size/2);
+
+  ROS_INFO("Distancia media: %lf %lf %lf %lf %lf", distacnia_media_izq, distacnia_media_der, distancia_media_cen, linearV, angularW);
+
+
+  if (distacnia_media_izq < 0.5) {
+    linearV = 0.1;
+    angularW = angularW/(distacnia_media_izq+0.5);
+    pressed_ = true;
+    sentido_ = -1;
+  }
+  else if (distacnia_media_der < 0.5) {
+    linearV = 0.1;
+    angularW = angularW/(distacnia_media_der+0.5);
     pressed_ = true;
     sentido_ = 1;
   }
-  else if (distacnia_media_der < 0.2) {
+  else if (distancia_media_cen < 0.3) {
+    linearV = 0.1;
+    angularW = 2.0;
     pressed_ = true;
     sentido_ = -1;
   }
   else {
+    linearV = 0.2;
     pressed_ = false;
   }
 
@@ -126,9 +144,6 @@ BumpGo::step()
 {
   geometry_msgs::Twist cmd;
 
-  float linearV = 0.2 ;
-  float angularW = 0.4 ;
-
   switch (state_)
   {
     case GOING_FORWARD:
@@ -140,7 +155,7 @@ BumpGo::step()
       if (pressed_)
       {
         press_ts_ = ros::Time::now();
-        state_ = GOING_BACK;
+        state_ = TURNING;
         ROS_INFO("GOING_FORWARD -> GOING_BACK");
       }
 
