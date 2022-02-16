@@ -17,6 +17,7 @@
 #include "geometry_msgs/Twist.h"
 #include "sensor_msgs/LaserScan.h"
 #include "ros/ros.h"
+#include "stdio.h"
 
 namespace fsm_bump_go
 {
@@ -45,6 +46,58 @@ BumpGo::BumpGo()
   pub_vel_ = n_.advertise<geometry_msgs::Twist>("mobile_base/commands/velocity",10);
 }
 
+bool BumpGo::valorApto(float v ){
+    float  min =  0;
+    float  max = 1;
+    return  !(v > max || v < min)  ;
+} 
+
+float BumpGo::hacerMedia(std::vector<float> &arr){
+
+  float media = 0 ;
+  int n = 0 ;
+ 
+  for (int i = 0; i < arr.size() ; i++)
+  {
+    float valorActual = arr[i] ;
+
+    if ( valorApto(valorActual) ){
+        media+=valorActual;
+        n++;
+    }  
+  }
+  return media/n ;
+}
+
+bool BumpGo::hayObstaculo(std::vector<float> &arr,float rango){
+     float media = hacerMedia(arr) ;
+     return  media < rango ;
+}
+
+std::vector<std::vector<float>> BumpGo::divisionVector(std::vector<float> &arr){
+     
+     std::vector<float> semiplanoDerecho ;
+     std::vector<float> semiplanoIzquierdo ;
+
+     std::vector<std::vector<float>> semiplanos ;
+
+     for(int i = 0 ; i < arr.size() ; i++){
+
+         float valorActual = arr[i] ;
+
+         if( i < arr.size()/2 ){
+            semiplanoIzquierdo.push_back(valorActual) ;
+         }else{
+            semiplanoDerecho.push_back(valorActual) ;
+         }
+
+     }
+     semiplanos.push_back(semiplanoIzquierdo) ;
+     semiplanos.push_back(semiplanoDerecho)  ;
+
+     return semiplanos ;
+}
+
 void
 BumpGo::laserCallback(const sensor_msgs::LaserScan::ConstPtr& msg)
 {
@@ -52,9 +105,19 @@ BumpGo::laserCallback(const sensor_msgs::LaserScan::ConstPtr& msg)
     a una distancia d m
   */
   int i = 0;
-
   double d = 1.0;
+  
+
+  //############# PARAMETROS ######################
+  float rango = 2 ; // 
+
+  // #############################################
+
+  // paso del array medidas a un std::vector 
   int ranges_size = msg->ranges.size();
+  
+  
+  //float media = hacerMedia(a) ;
 
   double distacnia_media_izq = 0.0;
   double distacnia_media_der = 0.0;
@@ -127,49 +190,36 @@ BumpGo::step()
   geometry_msgs::Twist cmd;
 
   float linearV = 0.2 ;
-  float angularW = 0.4 ;
+  float angularW = 1 ;
 
+  bool obstacle_detected_ = true ;
+
+  
+
+  if(obstacle_detected_)
+  {
+  state_ = TURNING;
+  }
+  else
+  {
+  state_ = GOING_FORWARD ;
+  }
+  
   switch (state_)
   {
-    case GOING_FORWARD:
+  case GOING_FORWARD :
+  {
+    cmd.linear.x = linearV;
+    cmd.linear.z = 0;
+  }
+  case TURNING :
+  {
+    cmd.linear.x = 0;
+    cmd.linear.z = sentido_*angularW;
+  }
+  }
 
-      cmd.linear.x = linearV ;
-      cmd.angular.z = 0 ;
-
-
-      if (pressed_)
-      {
-        press_ts_ = ros::Time::now();
-        state_ = GOING_BACK;
-        ROS_INFO("GOING_FORWARD -> GOING_BACK");
-      }
-
-      break;
-    case GOING_BACK:
-
-        cmd.linear.x = -linearV  ;
-        cmd.angular.z = 0 ;
-
-      if ((ros::Time::now() - press_ts_).toSec() > BACKING_TIME )
-      {
-        turn_ts_ = ros::Time::now();
-        state_ = TURNING;
-        ROS_INFO("GOING_BACK -> TURNING");
-      }
-
-      break;
-    case TURNING:
-
-        cmd.linear.x = 0 ;
-        cmd.angular.z = sentido_*angularW ;
-
-      if ((ros::Time::now()-turn_ts_).toSec() > TURNING_TIME )
-      {
-        state_ = GOING_FORWARD;
-        ROS_INFO("TURNING -> GOING_FORWARD");
-      }
-      break;
-    }
+  
 
     pub_vel_.publish(cmd);
 }

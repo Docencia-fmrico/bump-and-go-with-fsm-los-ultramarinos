@@ -31,13 +31,20 @@ public:
 
   void bumperCallback(const kobuki_msgs::BumperEvent::ConstPtr& msg);
   void laserCallback(const sensor_msgs::LaserScan::ConstPtr& msg);
+  
+  bool hayObstaculo(std::vector<float> &arr,float rango);
+  std::vector<std::vector<float>> divisionVector(std::vector<float> &arr);
+
+  bool valorApto(float v );
+  float hacerMedia(std::vector<float> &arr);
+
 
   void step();
 
 private:
   ros::NodeHandle n_;
 
-  static const int GOING_FORWARD   = 0;
+  static const int GOING_FORWARD = 0;
   static const int GOING_BACK = 1;
   static const int TURNING = 2;
 
