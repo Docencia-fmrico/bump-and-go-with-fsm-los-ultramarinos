@@ -16,7 +16,6 @@
 #define FSM_BUMP_GO_BUMPGO_H
 
 #include "ros/ros.h"
-
 #include "kobuki_msgs/BumperEvent.h"
 #include "geometry_msgs/Twist.h"
 #include "sensor_msgs/LaserScan.h"
@@ -31,17 +30,27 @@ public:
 
   void bumperCallback(const kobuki_msgs::BumperEvent::ConstPtr& msg);
   void laserCallback(const sensor_msgs::LaserScan::ConstPtr& msg);
-  
-  bool hayObstaculo(std::vector<float> &arr,float rango);
-  std::vector<std::vector<float>> divisionVector(std::vector<float> &arr);
 
+//------------------------------------------------------------
+  bool hayObstaculo(std::vector<float> &arr,float rango);  
+  std::vector<std::vector<float>> divisionVector(std::vector<float> &arr);
   bool valorApto(float v );
   float hacerMedia(std::vector<float> &arr);
+  int semiplanoConObstaculo(std::vector<float> &izq,std::vector<float> &der);
 
 
   void step();
 
 private:
+
+  std::vector<float> mediciones;
+  float rango_deteccion;
+  float linearV;
+  float angularW;
+  float  min;
+  float  max;
+  float apertura;
+
   ros::NodeHandle n_;
 
   static const int GOING_FORWARD = 0;
@@ -53,12 +62,13 @@ private:
 
   static const int TURNING_RIGHT = -1;
   static const int TURNING_LEFT = 1;
+  const float PI = 3.1415926535897 ;
 
   int state_;
 
   int sentido_;
 
-  bool pressed_;
+  bool obstacle_detected_;
 
   ros::Time press_ts_;
   ros::Time turn_ts_;
@@ -67,6 +77,8 @@ private:
   ros::Subscriber sub_bumber_;
   ros::Subscriber pub_astra_;
   ros::Publisher pub_vel_;
+
+
 };
 
 }  // namespace fsm_bump_go

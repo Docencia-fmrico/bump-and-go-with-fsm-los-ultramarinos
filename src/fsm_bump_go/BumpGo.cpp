@@ -22,44 +22,35 @@
 namespace fsm_bump_go
 {
 
-BumpGo::BumpGo()
-: state_(GOING_FORWARD),
-  pressed_(false),
-  sentido_(1)
-{
-
-  // el nombre del topic para recibir los mensajes del bumper es --> /mobile_base/events/bumper
-  // subscribe('nombreTopic',frecuencia,funcion de CallBack);
-
-  //ros::Subscriber vsub_bumber_ = sus.subscribe("/mobile_base/events/bumper",10,&BumpGo::bumperCallback,this);
-
-  // el nombre del topic para publibar en los motores es --> mobile_base/commands/velocity
-  // n_.advertise< Paquete :: Tipo del mensaje >('Nombre del topic',frecuencia);
-
-  //ros::Publisher pub_vel_ = pub.advertise<geometry_msgs::Twist>("mobile_base/commands/velocity",10);
-
-  // Suscriptor del bumper
-  //sub_bumber_ = n_.subscribe("/mobile_base/events/bumper",10,&BumpGo::bumperCallback,this);
-
-  // Suscriptor del laser
+BumpGo::BumpGo(): state_(GOING_FORWARD),obstacle_detected_(false),sentido_(1){
+  
+  // parametros santi 
+  std::vector<float> mediciones = {10000};
+  rango_deteccion = 0.2;
+  linearV  = 0.2;
+  angularW  = 0.8;
+  min = 0.0;
+  max = 1.0;
+  apertura = PI/3.0;
+ 
+  // publicadores y suscriptores 
   pub_astra_ = n_.subscribe("/scan",10,&BumpGo::laserCallback,this);
   pub_vel_ = n_.advertise<geometry_msgs::Twist>("mobile_base/commands/velocity",10);
 }
 
 bool BumpGo::valorApto(float v ){
-    float  min =  0;
-    float  max = 1;
-    return  !(v > max || v < min)  ;
+  
+    return  !(v > max || v < min);
 } 
 
 float BumpGo::hacerMedia(std::vector<float> &arr){
 
-  float media = 0 ;
-  int n = 0 ;
+  float media = 0;
+  int n = 0;
  
   for (int i = 0; i < arr.size() ; i++)
   {
-    float valorActual = arr[i] ;
+    float valorActual = arr[i];
 
     if ( valorApto(valorActual) ){
         media+=valorActual;
@@ -70,8 +61,8 @@ float BumpGo::hacerMedia(std::vector<float> &arr){
 }
 
 bool BumpGo::hayObstaculo(std::vector<float> &arr,float rango){
-     float media = hacerMedia(arr) ;
-     return  media < rango ;
+     float media = hacerMedia(arr);
+     return  media < rango;
 }
 
 std::vector<std::vector<float>> BumpGo::divisionVector(std::vector<float> &arr){
@@ -98,129 +89,85 @@ std::vector<std::vector<float>> BumpGo::divisionVector(std::vector<float> &arr){
      return semiplanos ;
 }
 
-void
-BumpGo::laserCallback(const sensor_msgs::LaserScan::ConstPtr& msg)
-{
-  /* Version 1: leemos las medidas y vamos hacia atras si detectamos un obstáculo
-    a una distancia d m
-  */
-  int i = 0;
-  double d = 1.0;
-  
+int BumpGo::semiplanoConObstaculo(std::vector<float> &izq,std::vector<float> &der){
+    float mediaDerecha = hacerMedia(izq);
+    float mediaIzquierda = hacerMedia(der);
 
-  //############# PARAMETROS ######################
-  float rango = 2 ; // 
-
-  // #############################################
-
-  // paso del array medidas a un std::vector 
-  int ranges_size = msg->ranges.size();
-  
-  
-  //float media = hacerMedia(a) ;
-
-  double distacnia_media_izq = 0.0;
-  double distacnia_media_der = 0.0;
-
-
-  for (i = 0; i < ranges_size/2; i++)
-  {
-    if (msg->ranges[i] > 0 && msg->ranges[i] < 1)
-        distacnia_media_izq+=msg->ranges[i];
-
-  }
-  for (i = ranges_size/2; i < ranges_size; i++)
-  {
-    if (msg->ranges[i] > 0 && msg->ranges[i] < 1)
-        distacnia_media_der+=msg->ranges[i];
-  }
-
-  distacnia_media_der = distacnia_media_der / (ranges_size/2);
-  distacnia_media_izq = distacnia_media_izq / (ranges_size/2);
-
-  ROS_INFO("Distancia media: %lf %lf", distacnia_media_izq, distacnia_media_der);
-
-  if (distacnia_media_izq < 0.2) {
-    pressed_ = true;
-    sentido_ = 1;
-  }
-  else if (distacnia_media_der < 0.2) {
-    pressed_ = true;
-    sentido_ = -1;
-  }
-  else {
-    pressed_ = false;
-  }
-
-}
-
-
-// Bumper
-void
-BumpGo::bumperCallback(const kobuki_msgs::BumperEvent::ConstPtr& msg)
-{
-  int a = msg->PRESSED ;
-
-  pressed_ = msg->state == kobuki_msgs::BumperEvent::PRESSED;
-
-  if (pressed_)
-  {
-    switch (msg->bumper)
-    {
-      case kobuki_msgs::BumperEvent::LEFT:
-        sentido_=TURNING_RIGHT;
-        ROS_INFO("OUCH  POR LA IZQ");
-        break;
-      case kobuki_msgs::BumperEvent::RIGHT:
-        sentido_=TURNING_LEFT;
-        ROS_INFO("OUCH POR LA DRCH");
-        break;
-      case kobuki_msgs::BumperEvent::CENTER:
-        sentido_=TURNING_LEFT;
-        ROS_INFO("OUCH DE FRENTE");
-        break;
+    if(mediaDerecha > mediaIzquierda){
+       return -1;
+    }else{
+       return 1;
     }
+} 
+
+void BumpGo::laserCallback(const sensor_msgs::LaserScan::ConstPtr& msg){
+  
+  //int ranges_size = msg->ranges.size();
+  // pasa de array a std::vector 
+
+  float min_ = msg->angle_min;
+  float max_ = msg->angle_max; 
+  float paso = msg->angle_increment;
+
+  int indiceMin = (-min_ - apertura )/ paso;
+  int indeceMax = (max_ - apertura )/ paso;
+
+  int n = msg->ranges.size();
+  std::vector<float> medidas;
+
+  for( int i = indiceMin ; i < indeceMax ; i++ ){
+
+     medidas.push_back(msg->ranges[i]);
   }
+
+  mediciones = medidas ;
+  
 }
-//
 
-void
-BumpGo::step()
-{
+void BumpGo::step(){
+
   geometry_msgs::Twist cmd;
-
-  float linearV = 0.2 ;
-  float angularW = 1 ;
-
-  bool obstacle_detected_ = true ;
-
+  
+  obstacle_detected_ = hayObstaculo(mediciones,rango_deteccion);
+  // un if else muy fanci :p 
+  //ROS_INFO("bucle") ;
   
 
-  if(obstacle_detected_)
-  {
-  state_ = TURNING;
+  if ( obstacle_detected_ && state_== GOING_FORWARD ){
+
+      std::vector<std::vector<float>> semiplanos = divisionVector(mediciones);
+      std::vector<float> semiplanoIzquierdo = semiplanos[0];
+      std::vector<float> semiplanoDerecho = semiplanos[1];
+      sentido_ = semiplanoConObstaculo(semiplanoIzquierdo,semiplanoDerecho);
+      
   }
-  else
-  {
-  state_ = GOING_FORWARD ;
+
+
+  if (obstacle_detected_) {
+     state_ = TURNING;
+     ROS_INFO("VEO ALGO");
+  }else {
+     state_ = GOING_FORWARD;
   }
-  
-  switch (state_)
-  {
-  case GOING_FORWARD :
+   
+
+  if (state_ == GOING_FORWARD)
   {
     cmd.linear.x = linearV;
     cmd.linear.z = 0;
+     ROS_INFO("PA LANTE");
   }
-  case TURNING :
+
+  if(state_ == TURNING)
   {
     cmd.linear.x = 0;
     cmd.linear.z = sentido_*angularW;
-  }
+    ROS_INFO("PA LAdO");
   }
 
   
-
+  
+    
     pub_vel_.publish(cmd);
 }
 
