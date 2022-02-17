@@ -38,7 +38,7 @@ private:
   static const int GOING_BACK = 1;
   static const int TURNING = 2;
 
-  static constexpr double TURNING_TIME = 5.0;
+  double TURNING_TIME;
   static constexpr double BACKING_TIME = 3.0;
 
   static const int TURNING_RIGHT = -1;
@@ -47,6 +47,9 @@ private:
   int state_;
 
   int sentido_;
+
+  double angulo_;
+  const double PI = 3.14159265359;
 
   bool pressed_;
 
