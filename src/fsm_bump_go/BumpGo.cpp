@@ -64,7 +64,7 @@ BumpGo::bumperCallback(const kobuki_msgs::BumperEvent::ConstPtr& msg)
         ROS_INFO("OUCH POR LA DRCH");
         break;
       case kobuki_msgs::BumperEvent::CENTER:
-        angulo_=PI/2.0;
+        angulo_=PI/3.0;
         ROS_INFO("OUCH DE FRENTE");
         break;
     }
@@ -77,7 +77,7 @@ BumpGo::step()
   geometry_msgs::Twist cmd;
 
   float linearV = 0.2 ;
-  float angularW = 0.4 ;
+  float angularW = 0.8 ;
 
   switch (state_)
   {
@@ -109,7 +109,7 @@ BumpGo::step()
 
       break;
     case TURNING:
-        TURNING_TIME = angulo_/angularW;
+        TURNING_TIME = PI * angulo_/(angularW);
         cmd.linear.x = 0 ;
         cmd.angular.z = sentido_*angularW ;
 
