@@ -26,12 +26,12 @@ BumpGo::BumpGo(): state_(GOING_FORWARD),obstacle_detected_(false),sentido_(1){
   
   // parametros santi 
   std::vector<float> mediciones = {10000};
-  rango_deteccion = 1.0;
-  linearV  = 0.4;
-  angularW  = 0.8;
-  min = 0.0;
-  max = 2.0;
-  apertura = PI/3.0;
+  rango_deteccion = 1;
+  linearV  = 0.2;
+  angularW  = 0.4;
+  min =  0.1 ;//rango_deteccion*3/4;
+  max = 1.5;
+  apertura = PI/4;
  
   // publicadores y suscriptores 
   pub_astra_ = n_.subscribe("/scan",10,&BumpGo::laserCallback,this);
@@ -97,9 +97,9 @@ int BumpGo::semiplanoConObstaculo(std::vector<float> &izq,std::vector<float> &de
     float mediaIzquierda = hacerMedia(der);
 
     if(mediaDerecha > mediaIzquierda){
-       return 1;
-    }else{
        return -1;
+    }else{
+       return 1;
     }
 } 
 
@@ -117,8 +117,9 @@ void BumpGo::laserCallback(const sensor_msgs::LaserScan::ConstPtr& msg){
   //ROS_INFO_STREAM("apertura: " << apertura);
   
 
-  int indiceMin = (-min_ + apertura )/ paso;
+  int indiceMin = (apertura )/ paso;
   int indiceMax = (max_ - apertura )/ paso;
+  
   //ROS_INFO_STREAM("indice min: " << indiceMin);
   //ROS_INFO_STREAM("indice max: " << indiceMax);
 
@@ -129,9 +130,15 @@ void BumpGo::laserCallback(const sensor_msgs::LaserScan::ConstPtr& msg){
   //ROS_INFO_STREAM("size: " << n);
 
 
-  for( int i = indiceMin ; i < indiceMax ; i++ ){
+  for( int i = 0 ; i < indiceMin ; i++ ){
 
      medidas.push_back(msg->ranges[i]);
+  }
+
+  for (int i = indiceMax; i < n ; i++){
+
+     medidas.push_back(msg->ranges[i]);
+
   }
 
   mediciones = medidas;
@@ -178,7 +185,6 @@ void BumpGo::step(){
     cmd.linear.x = 0;
     cmd.angular.z = sentido_*angularW;
     ROS_INFO("PA LAdO");
-
     ROS_INFO_STREAM("sentido del giro: " << sentido_);
 
   }
