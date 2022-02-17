@@ -1,0 +1,74 @@
+[33mcommit f42b786e4cae32a59871c5d95891e4d96e43b446[m[33m ([m[1;36mHEAD -> [m[1;32mlaser_mejora[m[33m, [m[1;31morigin/laser_mejora[m[33m, [m[1;32mmain[m[33m, [m[1;32mlaser[m[33m)[m
+Author: Santiago Fenes Guardia <s.fenes.2019@alumnos.urjc.es>
+Date:   Tue Feb 15 21:09:55 2022 +0100
+
+    version nueva, deteccion de obstaculos y giro
+
+[33mcommit 581a89017e6bde062aebfd6b32440f007bbc116a[m
+Author: Santiago Fenes Guardia <s.fenes.2019@alumnos.urjc.es>
+Date:   Mon Feb 14 18:22:57 2022 +0100
+
+    arreglado error distancia media
+
+[33mcommit 599fd44033ca0e1f60c755440f138b53284b6315[m
+Author: Santiago Fenes Guardia <s.fenes.2019@alumnos.urjc.es>
+Date:   Mon Feb 14 18:21:53 2022 +0100
+
+    arreglado error distancia media
+
+[33mcommit 404b1e18be707fd3c25897f91e809eee275e8ee6[m
+Author: Santiago Fenes Guardia <s.fenes.2019@alumnos.urjc.es>
+Date:   Mon Feb 14 17:27:24 2022 +0100
+
+    añadido ir hacia atras
+
+[33mcommit 84b2a9c1e4aa5dd7beff491528425e3a23a73988[m
+Author: Santiago Fenes Guardia <s.fenes.2019@alumnos.urjc.es>
+Date:   Mon Feb 14 17:06:35 2022 +0100
+
+    laser
+
+[33mcommit 2a0523ca7f3ffce4024c72d68f92dcb857a72ef1[m
+Merge: 5a7425b 9fa3844
+Author: lroa2019 <90789825+lroa2019@users.noreply.github.com>
+Date:   Sun Feb 13 12:24:39 2022 +0100
+
+    Merge pull request #5 from Docencia-fmrico/Gira_con_el_Bumper
+    
+    Modificaciones para que gire a los dos lados con el Bumper
+
+[33mcommit 9fa3844c241812dda1e985bc63ec335f4aab50c0[m
+Author: Laura Roa <l.roa.2019@alumnos.urjc.es>
+Date:   Sun Feb 13 12:21:59 2022 +0100
+
+    Modificaciones para que gire a los dos lados con el Bumper
+
+[33mcommit 5a7425be8396dea8b57aae0300cbae28d14ac2c1[m
+Author: Jorge Rando <jorgerando2000@hotmail.com>
+Date:   Fri Feb 11 09:43:49 2022 +0000
+
+    Funcionalidad basica terminada
+
+[33mcommit 32987d5a0231a4e85c26a3cece9a4e8d847d275f[m
+Author: github-classroom[bot] <66690702+github-classroom[bot]@users.noreply.github.com>
+Date:   Tue Feb 1 12:11:35 2022 +0000
+
+    Setting up GitHub Classroom Feedback
+
+[33mcommit 87d33f83c783629f6b0a67c750b84337d6d9b0e5[m[33m ([m[1;31morigin/feedback[m[33m)[m
+Author: github-classroom[bot] <66690702+github-classroom[bot]@users.noreply.github.com>
+Date:   Tue Feb 1 12:11:35 2022 +0000
+
+    GitHub Classroom Feedback
+
+[33mcommit e22da3d23094e9fd4125a303bc005a18bfd841fd[m
+Author: github-classroom[bot] <66690702+github-classroom[bot]@users.noreply.github.com>
+Date:   Tue Feb 1 12:11:34 2022 +0000
+
+    Add online IDE url
+
+[33mcommit aaa8e4c4c6ae49f8d766a07b1e8a6ed791c69ba7[m
+Author: github-classroom[bot] <66690702+github-classroom[bot]@users.noreply.github.com>
+Date:   Tue Feb 1 12:11:32 2022 +0000
+
+    Initial commit

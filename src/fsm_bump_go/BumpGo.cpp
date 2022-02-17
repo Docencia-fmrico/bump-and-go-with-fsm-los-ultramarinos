@@ -26,11 +26,11 @@ BumpGo::BumpGo(): state_(GOING_FORWARD),obstacle_detected_(false),sentido_(1){
   
   // parametros santi 
   std::vector<float> mediciones = {10000};
-  rango_deteccion = 1;
+  rango_deteccion = 0.7;
   linearV  = 0.2;
-  angularW  = 0.4;
-  min =  0.1 ;//rango_deteccion*3/4;
-  max = 1.5;
+  angularW  = 1.0;
+  min =  0.15 ;//rango_deteccion*3/4;
+  max = rango_deteccion*1.5;
   apertura = PI/4;
  
   // publicadores y suscriptores 
@@ -54,11 +54,13 @@ float BumpGo::hacerMedia(std::vector<float> &arr){
     //ROS_INFO_STREAM("VALOR = " << valorActual);
 
     if ( valorApto(valorActual) ){
+    //ROS_INFO_STREAM("VALOR = " << valorActual);
         media+=valorActual;
         n++;
     } 
   }
   //ROS_INFO_STREAM("size: " << arr.size());
+  //ROS_INFO_STREAM("VALORES = " << n);
   return media/n ;
 }
 
@@ -182,7 +184,7 @@ void BumpGo::step(){
 
   if(state_ == TURNING)
   {
-    cmd.linear.x = 0;
+    cmd.linear.x = 0.001;
     cmd.angular.z = sentido_*angularW;
     ROS_INFO("PA LAdO");
     ROS_INFO_STREAM("sentido del giro: " << sentido_);
