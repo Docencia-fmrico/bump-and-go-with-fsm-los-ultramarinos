@@ -26,11 +26,11 @@ BumpGo::BumpGo(): state_(GOING_FORWARD),obstacle_detected_(false),sentido_(1){
   
   // parametros santi 
   std::vector<float> mediciones = {10000};
-  rango_deteccion = 0.2;
-  linearV  = 0.2;
+  rango_deteccion = 1.0;
+  linearV  = 0.4;
   angularW  = 0.8;
   min = 0.0;
-  max = 1.0;
+  max = 2.0;
   apertura = PI/3.0;
  
   // publicadores y suscriptores 
@@ -51,17 +51,20 @@ float BumpGo::hacerMedia(std::vector<float> &arr){
   for (int i = 0; i < arr.size() ; i++)
   {
     float valorActual = arr[i];
+    //ROS_INFO_STREAM("VALOR = " << valorActual);
 
     if ( valorApto(valorActual) ){
         media+=valorActual;
         n++;
-    }  
+    } 
   }
+  //ROS_INFO_STREAM("size: " << arr.size());
   return media/n ;
 }
 
 bool BumpGo::hayObstaculo(std::vector<float> &arr,float rango){
      float media = hacerMedia(arr);
+     ROS_INFO_STREAM("MEDIA = " << media);
      return  media < rango;
 }
 
@@ -94,9 +97,9 @@ int BumpGo::semiplanoConObstaculo(std::vector<float> &izq,std::vector<float> &de
     float mediaIzquierda = hacerMedia(der);
 
     if(mediaDerecha > mediaIzquierda){
-       return -1;
-    }else{
        return 1;
+    }else{
+       return -1;
     }
 } 
 
@@ -108,19 +111,31 @@ void BumpGo::laserCallback(const sensor_msgs::LaserScan::ConstPtr& msg){
   float min_ = msg->angle_min;
   float max_ = msg->angle_max; 
   float paso = msg->angle_increment;
+  //ROS_INFO_STREAM("min: " << min_);
+  //ROS_INFO_STREAM("max: " << max_);
+  //ROS_INFO_STREAM("inc: " << paso);
+  //ROS_INFO_STREAM("apertura: " << apertura);
+  
 
-  int indiceMin = (-min_ - apertura )/ paso;
-  int indeceMax = (max_ - apertura )/ paso;
+  int indiceMin = (-min_ + apertura )/ paso;
+  int indiceMax = (max_ - apertura )/ paso;
+  //ROS_INFO_STREAM("indice min: " << indiceMin);
+  //ROS_INFO_STREAM("indice max: " << indiceMax);
+
+
 
   int n = msg->ranges.size();
   std::vector<float> medidas;
+  //ROS_INFO_STREAM("size: " << n);
 
-  for( int i = indiceMin ; i < indeceMax ; i++ ){
+
+  for( int i = indiceMin ; i < indiceMax ; i++ ){
 
      medidas.push_back(msg->ranges[i]);
   }
 
-  mediciones = medidas ;
+  mediciones = medidas;
+  //ROS_INFO_STREAM("size: " << medidas.size());
   
 }
 
@@ -154,15 +169,18 @@ void BumpGo::step(){
   if (state_ == GOING_FORWARD)
   {
     cmd.linear.x = linearV;
-    cmd.linear.z = 0;
+    cmd.angular.z = 0;
      ROS_INFO("PA LANTE");
   }
 
   if(state_ == TURNING)
   {
     cmd.linear.x = 0;
-    cmd.linear.z = sentido_*angularW;
+    cmd.angular.z = sentido_*angularW;
     ROS_INFO("PA LAdO");
+
+    ROS_INFO_STREAM("sentido del giro: " << sentido_);
+
   }
 
   
