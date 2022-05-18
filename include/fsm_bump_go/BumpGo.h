@@ -28,7 +28,6 @@ class BumpGo
 public:
   BumpGo();
 
-  void bumperCallback(const kobuki_msgs::BumperEvent::ConstPtr& msg);
   void laserCallback(const sensor_msgs::LaserScan::ConstPtr& msg);
 
 //------------------------------------------------------------
@@ -42,7 +41,6 @@ public:
   void step();
 
 private:
-
   std::vector<float> mediciones;
   float rango_deteccion;
   float linearV;
@@ -77,10 +75,7 @@ private:
   ros::Subscriber sub_bumber_;
   ros::Subscriber pub_astra_;
   ros::Publisher pub_vel_;
-
-
 };
-
 }  // namespace fsm_bump_go
 
 #endif  // FSM_BUMP_GO_BUMPGO_H
