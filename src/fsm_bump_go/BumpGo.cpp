@@ -22,19 +22,19 @@
 namespace fsm_bump_go
 {
 
-BumpGo::BumpGo(): state_(GOING_FORWARD), obstacle_detected_(false), sentido_(1)
+BumpGo::BumpGo(): state_(GOING_FORWARD), obstacle_left_(false), obstacle_right_(false), sentido_(1)
 {
   // parametros santi 
   std::vector<float> mediciones = {10000};
-  rango_deteccion = 0.7;
+  rango_deteccion = 0.75;
   linearV  = 0.2;
-  angularW  = 1.0;
+  angularW  = 0.6;
   min =  0.15 ;//rango_deteccion*3/4;
   max = rango_deteccion*1.5;
-  apertura = PI/4;
+  apertura = PI/6;
  
   // publicadores y suscriptores 
-  pub_astra_ = n_.subscribe("/scan",10,&BumpGo::laserCallback,this);
+  pub_astra_ = n_.subscribe("/scan_filtered",10,&BumpGo::laserCallback,this);
   pub_vel_ = n_.advertise<geometry_msgs::Twist>("mobile_base/commands/velocity",10);
 }
 
@@ -62,13 +62,14 @@ float BumpGo::hacerMedia(std::vector<float> &arr)
   }
   //ROS_INFO_STREAM("size: " << arr.size());
   //ROS_INFO_STREAM("VALORES = " << n);
+  if (n == 0){return 10;}
   return media/n;
 }
 
 bool BumpGo::hayObstaculo(std::vector<float> &arr,float rango)
 {
-  float media = hacerMedia(arr);
-  ROS_INFO_STREAM("MEDIA = " << media);
+  media = hacerMedia(arr);
+ // ROS_INFO_STREAM("MEDIA = " << media);
   return  media < rango;
 }
 
@@ -76,7 +77,7 @@ std::vector<std::vector<float>> BumpGo::divisionVector(std::vector<float> &arr){
      
      std::vector<float> semiplanoDerecho;
      std::vector<float> semiplanoIzquierdo;
-     std::vector<float> semiplanoCentral;
+
 
      std::vector<std::vector<float>> semiplanos;
 
@@ -84,11 +85,8 @@ std::vector<std::vector<float>> BumpGo::divisionVector(std::vector<float> &arr){
 
          float valorActual = arr[i];
 
-         if( i < arr.size()/3 ){
+         if( i < arr.size()/2 ){
             semiplanoIzquierdo.push_back(valorActual);
-         }
-         else if ( i < 2* arr.size()/3 ){
-            semiplanoCentral.push_back(valorActual);
          }
          else{
             semiplanoDerecho.push_back(valorActual);
@@ -96,25 +94,11 @@ std::vector<std::vector<float>> BumpGo::divisionVector(std::vector<float> &arr){
 
      }
      semiplanos.push_back(semiplanoIzquierdo);
-     semiplanos.push_back(semiplanoCentral);
      semiplanos.push_back(semiplanoDerecho);
 
      return semiplanos ;
 }
 
-int BumpGo::semiplanoConObstaculo(std::vector<float> &izq,std::vector<float> &der){
-    float mediaDerecha = hacerMedia(izq);
-    float mediaIzquierda = hacerMedia(der);
-
-    if (mediaDerecha > mediaIzquierda)
-    {
-      return -1;
-    }
-    else
-    {
-      return 1;
-    }
-} 
 
 void BumpGo::laserCallback(const sensor_msgs::LaserScan::ConstPtr& msg){
   
@@ -165,23 +149,52 @@ void BumpGo::step(){
   
   // ROS_INFO("bucle");
   
-      std::vector<std::vector<float>> semiplanos = divisionVector(mediciones);
-      std::vector<float> semiplanoIzquierdo = semiplanos[0];
-      std::vector<float> semiplanoCentral = semiplanos[1];
-      std::vector<float> semiplanoDerecho = semiplanos[2];
 
-  obstacle_front_ = hayObstaculo(mediciones,semiplanoCentral);
-  obstacle_left_ = hayObstaculo(mediciones,semiplanoIzquierdo);
-  obstacle_right_ = hayObstaculo(mediciones,semiplanoDerecho);
 
   switch (state_)
   {
     case GOING_FORWARD:
-      cmd.linear.x = 0.2;
+      cmd.linear.x = linearV;
       cmd.angular.z = 0;
 
-      if (obstacle_front_ || obstacle_right_ || obstacle_left_)
+  semiplanos = divisionVector(mediciones);
+  semiplanoIzquierdo = semiplanos[1];
+  semiplanoDerecho = semiplanos[0];
+
+  
+  obstacle_right_ = false;
+     
+  obstacle_left_ = false;
+
+  obstacle_left_ = hayObstaculo(semiplanoIzquierdo, rango_deteccion);
+  obstacle_right_ = hayObstaculo(semiplanoDerecho, rango_deteccion);
+
+      if (obstacle_right_ || obstacle_left_)
       {
+          if (obstacle_left_ && obstacle_right_)
+  {
+
+        mediaDerecha = hacerMedia(semiplanoDerecho);
+        mediaIzquierda = hacerMedia(semiplanoIzquierdo);
+
+        ROS_INFO("OBSTACULO FRONTAL");
+
+        if (mediaIzquierda < mediaDerecha)
+        {
+            obstacle_right_ = false;
+        }
+        else{
+          obstacle_left_ = false;
+        }
+        }
+        
+        if(obstacle_left_){
+          ROS_INFO("OBSTACULO A LA IZQUIERDA");
+        }
+        if(obstacle_right_){
+          ROS_INFO("OBSTACULO A LA DERECHA");
+        }
+
         pressed_ts_ = ros::Time::now();
         state_ = GOING_BACK;
         ROS_INFO("RETROCEDIENDO");
@@ -189,7 +202,7 @@ void BumpGo::step(){
       break;
 
     case GOING_BACK:
-      cmd.linear.x = -0.2;
+      cmd.linear.x = -linearV;
       cmd.angular.z = 0;
 
       if ((ros::Time::now() - pressed_ts_).toSec() > BACKING_TIME )
@@ -210,7 +223,7 @@ void BumpGo::step(){
 
     case TURNING_LEFT:
       cmd.linear.x = 0;
-      cmd.angular.z = 0.4;
+      cmd.angular.z = angularW;
 
       if ((ros::Time::now()-turn_ts_).toSec() > TURNING_TIME )
       {
@@ -220,7 +233,7 @@ void BumpGo::step(){
       break;
     case TURNING_RIGHT:
       cmd.linear.x = 0;
-      cmd.angular.z = -0.4;
+      cmd.angular.z = -angularW;
 
       if ((ros::Time::now()-turn_ts_).toSec() > TURNING_TIME )
       {
@@ -231,6 +244,4 @@ void BumpGo::step(){
   }
   pub_vel_.publish(cmd);
 }
-}  // namespace fsm_bump_go
-
 }  // namespace fsm_bump_go

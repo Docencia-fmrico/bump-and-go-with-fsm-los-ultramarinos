@@ -35,7 +35,6 @@ public:
   std::vector<std::vector<float>> divisionVector(std::vector<float> &arr);
   bool valorApto(float v );
   float hacerMedia(std::vector<float> &arr);
-  int semiplanoConObstaculo(std::vector<float> &izq,std::vector<float> &der);
 
 
   void step();
@@ -53,24 +52,31 @@ private:
 
   static const int GOING_FORWARD = 0;
   static const int GOING_BACK = 1;
-  static const int TURNING = 2;
+  static const int TURNING_RIGHT = 2;
+  static const int TURNING_LEFT = 3;
 
   static constexpr double TURNING_TIME = 5.0;
   static constexpr double BACKING_TIME = 3.0;
 
-  static const int TURNING_RIGHT = -1;
-  static const int TURNING_LEFT = 1;
+
   const float PI = 3.1415926535897 ;
 
   int state_;
 
   int sentido_;
 
-  bool obstacle_front_;
+  float media;
+  float mediaIzquierda;
+  float mediaDerecha;
+
+  std::vector<std::vector<float>> semiplanos;
+  std::vector<float> semiplanoIzquierdo;
+  std::vector<float> semiplanoDerecho;
+
   bool obstacle_left_;
   bool obstacle_right_;
 
-  ros::Time press_ts_;
+  ros::Time pressed_ts_;
   ros::Time turn_ts_;
   ros::Time scan_ts_;
 
