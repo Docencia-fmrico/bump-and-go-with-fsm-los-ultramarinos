@@ -66,7 +66,9 @@ private:
 
   int sentido_;
 
-  bool obstacle_detected_;
+  bool obstacle_front_;
+  bool obstacle_left_;
+  bool obstacle_right_;
 
   ros::Time press_ts_;
   ros::Time turn_ts_;

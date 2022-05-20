@@ -74,24 +74,30 @@ bool BumpGo::hayObstaculo(std::vector<float> &arr,float rango)
 
 std::vector<std::vector<float>> BumpGo::divisionVector(std::vector<float> &arr){
      
-     std::vector<float> semiplanoDerecho ;
-     std::vector<float> semiplanoIzquierdo ;
+     std::vector<float> semiplanoDerecho;
+     std::vector<float> semiplanoIzquierdo;
+     std::vector<float> semiplanoCentral;
 
-     std::vector<std::vector<float>> semiplanos ;
+     std::vector<std::vector<float>> semiplanos;
 
      for(int i = 0 ; i < arr.size() ; i++){
 
-         float valorActual = arr[i] ;
+         float valorActual = arr[i];
 
-         if( i < arr.size()/2 ){
-            semiplanoIzquierdo.push_back(valorActual) ;
-         }else{
-            semiplanoDerecho.push_back(valorActual) ;
+         if( i < arr.size()/3 ){
+            semiplanoIzquierdo.push_back(valorActual);
+         }
+         else if ( i < 2* arr.size()/3 ){
+            semiplanoCentral.push_back(valorActual);
+         }
+         else{
+            semiplanoDerecho.push_back(valorActual);
          }
 
      }
-     semiplanos.push_back(semiplanoIzquierdo) ;
-     semiplanos.push_back(semiplanoDerecho)  ;
+     semiplanos.push_back(semiplanoIzquierdo);
+     semiplanos.push_back(semiplanoCentral);
+     semiplanos.push_back(semiplanoDerecho);
 
      return semiplanos ;
 }
@@ -157,48 +163,74 @@ void BumpGo::step(){
 
   geometry_msgs::Twist cmd;
   
-  obstacle_detected_ = hayObstaculo(mediciones,rango_deteccion);
   // ROS_INFO("bucle");
   
-
-  if ( obstacle_detected_ && state_== GOING_FORWARD ){
-
       std::vector<std::vector<float>> semiplanos = divisionVector(mediciones);
       std::vector<float> semiplanoIzquierdo = semiplanos[0];
-      std::vector<float> semiplanoDerecho = semiplanos[1];
-      sentido_ = semiplanoConObstaculo(semiplanoIzquierdo,semiplanoDerecho);
-      
-  }
+      std::vector<float> semiplanoCentral = semiplanos[1];
+      std::vector<float> semiplanoDerecho = semiplanos[2];
 
+  obstacle_front_ = hayObstaculo(mediciones,semiplanoCentral);
+  obstacle_left_ = hayObstaculo(mediciones,semiplanoIzquierdo);
+  obstacle_right_ = hayObstaculo(mediciones,semiplanoDerecho);
 
-  if (obstacle_detected_) {
-     state_ = TURNING;
-     ROS_INFO("VEO ALGO");
-  }else {
-     state_ = GOING_FORWARD;
-  }
-   
-
-  if (state_ == GOING_FORWARD)
+  switch (state_)
   {
-    cmd.linear.x = linearV;
-    cmd.angular.z = 0;
-     ROS_INFO("PA LANTE");
+    case GOING_FORWARD:
+      cmd.linear.x = 0.2;
+      cmd.angular.z = 0;
+
+      if (obstacle_front_ || obstacle_right_ || obstacle_left_)
+      {
+        pressed_ts_ = ros::Time::now();
+        state_ = GOING_BACK;
+        ROS_INFO("RETROCEDIENDO");
+      }
+      break;
+
+    case GOING_BACK:
+      cmd.linear.x = -0.2;
+      cmd.angular.z = 0;
+
+      if ((ros::Time::now() - pressed_ts_).toSec() > BACKING_TIME )
+      {
+        turn_ts_ = ros::Time::now();
+        if (obstacle_left_)
+        {
+          state_ = TURNING_RIGHT;
+          ROS_INFO("GIRANDO DERECHA");
+        }
+        else
+        {
+          state_ = TURNING_LEFT;
+          ROS_INFO("GIRANDO IZQUIERDA");
+        }
+      }
+      break;
+
+    case TURNING_LEFT:
+      cmd.linear.x = 0;
+      cmd.angular.z = 0.4;
+
+      if ((ros::Time::now()-turn_ts_).toSec() > TURNING_TIME )
+      {
+        state_ = GOING_FORWARD;
+        ROS_INFO("AVANZANDO");
+      }
+      break;
+    case TURNING_RIGHT:
+      cmd.linear.x = 0;
+      cmd.angular.z = -0.4;
+
+      if ((ros::Time::now()-turn_ts_).toSec() > TURNING_TIME )
+      {
+        state_ = GOING_FORWARD;
+        ROS_INFO("AVANZANDO");
+      }
+      break;
   }
-
-  if(state_ == TURNING)
-  {
-    cmd.linear.x = 0.001;
-    cmd.angular.z = sentido_*angularW;
-    ROS_INFO("PA LADO");
-    ROS_INFO_STREAM("sentido del giro: " << sentido_);
-
-  }
-
-  
-  
-    
-    pub_vel_.publish(cmd);
+  pub_vel_.publish(cmd);
 }
+}  // namespace fsm_bump_go
 
 }  // namespace fsm_bump_go
