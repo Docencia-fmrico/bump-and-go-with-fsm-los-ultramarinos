@@ -22,8 +22,8 @@
 namespace fsm_bump_go
 {
 
-BumpGo::BumpGo(): state_(GOING_FORWARD),obstacle_detected_(false),sentido_(1){
-  
+BumpGo::BumpGo(): state_(GOING_FORWARD), obstacle_detected_(false), sentido_(1)
+{
   // parametros santi 
   std::vector<float> mediciones = {10000};
   rango_deteccion = 0.7;
@@ -38,36 +38,38 @@ BumpGo::BumpGo(): state_(GOING_FORWARD),obstacle_detected_(false),sentido_(1){
   pub_vel_ = n_.advertise<geometry_msgs::Twist>("mobile_base/commands/velocity",10);
 }
 
-bool BumpGo::valorApto(float v ){
-  
-    return  !(v > max || v < min);
+bool BumpGo::valorApto(float v )
+{
+  return  !(v > max || v < min);
 } 
 
-float BumpGo::hacerMedia(std::vector<float> &arr){
-
+float BumpGo::hacerMedia(std::vector<float> &arr)
+{
   float media = 0;
   int n = 0;
  
-  for (int i = 0; i < arr.size() ; i++)
+  for (int i = 0; i < arr.size(); i++)
   {
     float valorActual = arr[i];
     //ROS_INFO_STREAM("VALOR = " << valorActual);
 
-    if ( valorApto(valorActual) ){
-    //ROS_INFO_STREAM("VALOR = " << valorActual);
-        media+=valorActual;
-        n++;
+    if (valorApto(valorActual))
+    {
+      //ROS_INFO_STREAM("VALOR = " << valorActual);
+      media+=valorActual;
+      n++;
     } 
   }
   //ROS_INFO_STREAM("size: " << arr.size());
   //ROS_INFO_STREAM("VALORES = " << n);
-  return media/n ;
+  return media/n;
 }
 
-bool BumpGo::hayObstaculo(std::vector<float> &arr,float rango){
-     float media = hacerMedia(arr);
-     ROS_INFO_STREAM("MEDIA = " << media);
-     return  media < rango;
+bool BumpGo::hayObstaculo(std::vector<float> &arr,float rango)
+{
+  float media = hacerMedia(arr);
+  ROS_INFO_STREAM("MEDIA = " << media);
+  return  media < rango;
 }
 
 std::vector<std::vector<float>> BumpGo::divisionVector(std::vector<float> &arr){
@@ -98,10 +100,13 @@ int BumpGo::semiplanoConObstaculo(std::vector<float> &izq,std::vector<float> &de
     float mediaDerecha = hacerMedia(izq);
     float mediaIzquierda = hacerMedia(der);
 
-    if(mediaDerecha > mediaIzquierda){
-       return -1;
-    }else{
-       return 1;
+    if (mediaDerecha > mediaIzquierda)
+    {
+      return -1;
+    }
+    else
+    {
+      return 1;
     }
 } 
 
@@ -153,8 +158,7 @@ void BumpGo::step(){
   geometry_msgs::Twist cmd;
   
   obstacle_detected_ = hayObstaculo(mediciones,rango_deteccion);
-  // un if else muy fanci :p 
-  //ROS_INFO("bucle") ;
+  // ROS_INFO("bucle");
   
 
   if ( obstacle_detected_ && state_== GOING_FORWARD ){
@@ -186,7 +190,7 @@ void BumpGo::step(){
   {
     cmd.linear.x = 0.001;
     cmd.angular.z = sentido_*angularW;
-    ROS_INFO("PA LAdO");
+    ROS_INFO("PA LADO");
     ROS_INFO_STREAM("sentido del giro: " << sentido_);
 
   }

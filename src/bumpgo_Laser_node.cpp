@@ -11,3 +11,26 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
+#include "fsm_bump_go/bumpgo_Laser.h"
+#include "ros/ros.h"
+
+int main(int argc, char **argv)
+{
+  ros::init(argc, argv, "fsm_bump_go");
+  ros::NodeHandle nh;
+  bool laser_flipped;
+  nh.getParam("/bumpgo_Laser_node/laser_flipped", laser_flipped);
+
+  fsm_bump_go::BumpGo_Laser fsm_bump_go(laser_flipped);
+
+  ros::Rate loop_rate(20);
+  while (ros::ok())
+  {
+    fsm_bump_go.step();
+
+    ros::spinOnce();
+    loop_rate.sleep();
+  }
+  return 0;
+}

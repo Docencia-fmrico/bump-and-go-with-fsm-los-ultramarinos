@@ -1,3 +1,5 @@
 <launch>
-	<node pkg="fsm_bump_go" type="bumpgo_Laser_node" name="bumpgo_Laser_node" output="screen"/>
+	<node pkg="fsm_bump_go" type="bumpgo_Laser_node" name="bumpgo_Laser_node" output="screen">
+		<param name="laser_flipped" value="true"/>
+	</node>
 </launch>
