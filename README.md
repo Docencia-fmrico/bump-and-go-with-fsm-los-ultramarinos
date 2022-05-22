@@ -52,11 +52,11 @@ En esta versión se nos ha pedido hacer un programa bump and go usando el láser
 ### Funciones
 | Funciones | Descripción |
 | --- | --- |
-| valorApto |  |
-| hacerMedia |  |
-| hayObstaculo |  |
-| laserCallback |  |
-| step |  |
+| valorApto | Filtra los infinitos y valores nulos |
+| hacerMedia | Calcula la media del array que se le pasa como parametro, usando solo valores aptos |
+| hayObstaculo | Determina, a partir de los datos del laser, si hay un obstaculo en el rango seleccionado |
+| laserCallback | Filtra los valores del laser que queremos usar |
+| step | Implementa la máquina de estados |
 ### Launch
 ```
 roslaunch fsm_bump_go bumpgo_Laser.launch
