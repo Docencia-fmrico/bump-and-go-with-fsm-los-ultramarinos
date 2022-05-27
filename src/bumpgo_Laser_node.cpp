@@ -1,4 +1,4 @@
-// Copyright 2022 Intelligent Robotics Lab
+// Copyright 2022 los ultramarinos
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,15 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "fsm_bump_go/BumpGo.h"
-
+#include "fsm_bump_go/bumpgo_Laser.h"
 #include "ros/ros.h"
 
 int main(int argc, char **argv)
 {
   ros::init(argc, argv, "fsm_bump_go");
+  ros::NodeHandle nh;
+  bool laser_flipped;
+  nh.getParam("/bumpgo_Laser_node/laser_flipped", laser_flipped);
 
-  fsm_bump_go::BumpGo fsm_bump_go;
+  fsm_bump_go::BumpGo_Laser fsm_bump_go(laser_flipped);
 
   ros::Rate loop_rate(20);
   while (ros::ok())
@@ -29,8 +31,6 @@ int main(int argc, char **argv)
 
     ros::spinOnce();
     loop_rate.sleep();
-    //break;
   }
-
   return 0;
 }
